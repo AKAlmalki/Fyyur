@@ -1,7 +1,11 @@
 from datetime import datetime
-from flask_wtf import Form
+from logging import PlaceHolder
+from flask_wtf import Form, FlaskForm
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, BooleanField
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms.validators import DataRequired, AnyOf, URL, Regexp
+import enum 
+import re
+
 
 class ShowForm(Form):
     artist_id = StringField(
@@ -89,8 +93,8 @@ class VenueForm(Form):
         'image_link'
     )
     genres = SelectMultipleField(
-        # TODO implement enum restriction
-        'genres', validators=[DataRequired()],
+        'genres', 
+        validators=[DataRequired()],
         choices=[
             ('Alternative', 'Alternative'),
             ('Blues', 'Blues'),
@@ -121,11 +125,24 @@ class VenueForm(Form):
     )
 
     seeking_talent = BooleanField( 'seeking_talent' )
-    # seeking_talent.data = False
 
     seeking_description = StringField(
         'seeking_description'
     )
+
+    def validate(self):
+        """Custom Validate Method to check the phone number format"""
+
+        rv = FlaskForm.validate(self)
+
+        if not rv:
+            return False
+
+        if not is_valid_phone(self.phone.data):
+            return False
+
+        # if pass
+        return True
 
 
 
@@ -193,7 +210,7 @@ class ArtistForm(Form):
         ]
     )
     phone = StringField(
-        # TODO implement validation logic for state
+        # TODO implement validation logic for state [done in app.py in line(253)]
         'phone'
     )
     image_link = StringField(
@@ -224,7 +241,6 @@ class ArtistForm(Form):
         ]
      )
     facebook_link = StringField(
-        # TODO implement enum restriction
         'facebook_link', validators=[URL()]
      )
 
@@ -237,4 +253,33 @@ class ArtistForm(Form):
     seeking_description = StringField(
             'seeking_description'
      )
+    def validate(self):
+        """Custom Validate Method to check the phone number format"""
+        rv = FlaskForm.validate(self)
+
+        if not rv:
+            return False
+
+        if not is_valid_phone(self.phone.data):
+            return False
+
+        # if pass 
+        return True
+
+def is_valid_phone(number):
+    """ Validate phone numbers like:
+
+    1234567890 - no space
+    123.456.7890 - dot separator
+    123-456-7890 - dash separator
+    123 456 7890 - space separator
+
+    Patterns:
+    000 = [0-9]{3}
+    0000 = [0-9]{4}
+    -.  = ?[-. ]
+    Note: (? = optional)
+    """
+    regex = re.compile('^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$')
+    return regex.match(number)
 
