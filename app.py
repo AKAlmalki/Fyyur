@@ -16,7 +16,6 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 import sys
-from flask_debugtoolbar import DebugToolbarExtension
 from datetime import date
 from models import db, Artist, Venue, Show
 
@@ -34,9 +33,6 @@ app.debug = True
 
 # set a 'SECRET_KEY' to enable the Flask session cookies
 app.config['SECRET_KEY'] = '<replace with a secret key>'
-
-# activate the DebugToolbarExtension to help with the debuging in the browser phase.
-toolbar = DebugToolbarExtension(app)
 
 # Flask-Migrate [done]
 migrate = Migrate(app, db)
