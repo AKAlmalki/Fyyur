@@ -18,6 +18,7 @@ from flask_migrate import Migrate
 import sys
 from datetime import date
 from models import db, Artist, Venue, Show
+from jinja2.utils import markupsafe
 
 #----------------------------------------------------------------------------#
 # App Config.
@@ -34,11 +35,13 @@ app.debug = True
 # set a 'SECRET_KEY' to enable the Flask session cookies
 app.config['SECRET_KEY'] = '<replace with a secret key>'
 
+markupsafe.Markup()
+
+
 # Flask-Migrate [done]
 migrate = Migrate(app, db)
 
-# TODO: connect to a local postgresql database [done but with the password abc]
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:abc@localhost:5432/fyyur'
+# TODO: connect to a local postgresql database [done but with the password abc in the config.py]
 
 #----------------------------------------------------------------------------#
 # Filters.
@@ -87,8 +90,8 @@ def venues():
 
     for venue_info in all_venues: # loop for counting the num_upcoming_shows and other info for each venue
       
-      # calculating the upcoming shows
-      num_upcoming_shows=Venue.query.filter(Venue.shows).filter_by(id=venue_info.id).filter(Show.start_time >= datetime.now()).count() 
+      # calculating the upcoming shows [using join]
+      num_upcoming_shows = db.session.query(Show).join(Venue).filter(Show.venue_id==venue_info.id).filter(Show.start_time > datetime.now()).count()
 
       # storing venue info on data2 variable
       data2.extend([{
@@ -124,14 +127,14 @@ def search_venues():
   venues = Venue.query.filter(Venue.name.ilike("%" + search + "%")).all()
 
   for venue in venues:
-    
-    # calculating the upcoming shows
-    num_upcoming_shows=Venue.query.filter(Venue.shows).filter_by(id=venue.id).filter(Show.start_time >= datetime.now()).count() 
+
+    # calculating the upcoming shows [using join]
+    num_upcoming_shows = db.session.query(Show).join(Venue).filter(Show.venue_id==venue.id).filter(Show.start_time > datetime.now()).count()
 
     data.append({
       'id': venue.id,
       'name': venue.name,
-      'num_upcoming_shows': num_upcoming_shows,# complete it using join
+      'num_upcoming_shows': num_upcoming_shows,
     })
 
   # fill out the reponse and send it back to the user
@@ -159,14 +162,11 @@ def show_venue(venue_id):
   # get all venues with value equal to 'venue_id' variable
   venues = Venue.query.filter_by(id=venue_id).all()
 
-  # get all the past shows
-  past_shows = Show.query.filter_by(venue_id=venue_id).filter(Show.start_time <= datetime.now()).all()
+  # get all the past shows [using join]
+  past_shows = db.session.query(Show).join(Venue).filter(Show.venue_id==venue_id).filter(Show.start_time < datetime.now()).all()
 
-  # get all the upcoming shows
-  upcoming_shows = Show.query.filter_by(venue_id=venue_id).filter(Show.start_time >= datetime.now()).all()
-
-  # for testing #
-  # print('upcoming shows \t \t: ', upcoming_shows, '\n\n past shows: \t ', past_shows)
+  # get all the upcoming shows [using join]
+  upcoming_shows = db.session.query(Show).join(Venue).filter(Show.venue_id==venue_id).filter(Show.start_time > datetime.now()).all()
 
   for show in past_shows:
     # storing past_shows info on data2 variable
@@ -345,13 +345,15 @@ def search_artists():
 
   for artist in aritsts:
 
-    # calculating the upcoming shows
-    num_upcoming_shows=Artist.query.filter(Artist.shows).filter_by(id=artist.id).filter(Show.start_time >= datetime.now()).count() 
+    # calculating the upcoming shows [using join]
+    num_upcoming_shows = db.session.query(Show).join(Artist).filter(Show.artist_id==artist.id).filter(Show.start_time > datetime.now()).count()
+
+    # print('num:\t\t', num_upcoming_shows)
 
     data.append({
       'id': artist.id,
       'name': artist.name,
-      'num_upcoming_shows': num_upcoming_shows,# complete it using join
+      'num_upcoming_shows': num_upcoming_shows,
     })
 
   # fill out the reponse and send it back to the user
@@ -378,11 +380,11 @@ def show_artist(artist_id):
   # get all artist with value equal to 'venue_id' variable
   artists = Artist.query.filter_by(id=artist_id).all()
 
-  # get all the past shows
-  past_shows = Show.query.filter_by(artist_id=artist_id).filter(Show.start_time <= datetime.now()).all()
+  # get all the past shows [using join]
+  past_shows = db.session.query(Show).join(Artist).filter(Show.artist_id==artist_id).filter(Show.start_time < datetime.now()).all()
 
-  # get all the upcoming shows
-  upcoming_shows = Show.query.filter_by(artist_id=artist_id).filter(Show.start_time >= datetime.now()).all()
+  # get all the upcoming shows [using join]
+  upcoming_shows = db.session.query(Show).join(Artist).filter(Show.artist_id==artist_id).filter(Show.start_time > datetime.now()).all()
 
   for show in past_shows:
     # storing past_shows info on data2 variable
